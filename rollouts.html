@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>πR²: All Rollouts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/css/site.css">
+</head>
+<body>
+
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="index.html">&pi;<b>R²</b></a>
+  <span class="links">
+    <a href="index.html">&larr; Home</a>
+    <a href="index.html#tasks">Real World</a>
+    <a href="index.html#delay">Simulation</a>
+    <a href="index.html#results">Results</a>
+  </span>
+</div></nav>
+
+<section style="border-top:none"><div class="wrap">
+  <p class="eyebrow">All rollouts</p>
+  <!-- <h2>Full rollout gallery</h2> -->
+  <p class="lead">All 20 rollouts per method. Each trial marked <b style="color:#0e9e8f">success ✓</b> or <b style="color:#d8344f">failure ✗</b>. </p>
+    <!-- Insert Box and Don't Spill have 4 subgoals each; Tidy Up Book has 2. The πR² (ours) panel is outlined in teal.</p> -->
+
+  <div class="tabs" style="margin-top:20px">
+    <button class="tab active" data-tab="roll" data-key="catch">Catch Book</button>
+    <button class="tab" data-tab="roll" data-key="box">Insert Box</button>
+    <button class="tab" data-tab="roll" data-key="book">Tidy Up Book</button>
+    <button class="tab" data-tab="roll" data-key="spill">Don't Spill</button>
+</div>
+
+  <div data-tabgroup="roll">
+    <div data-panel="roll" data-key="catch">
+      <div class="rollblock">
+        <div class="gv ours" data-task="catch" data-method="ours"><div class="lab">πR² (ours)</div><video preload="none" poster="static/videos/posters/catch_ours_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/catch_ours_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="catch" data-method="sync"><div class="lab">Flow, Synchronous</div><video preload="none" poster="static/videos/posters/catch_sync_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/catch_sync_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="catch" data-method="async"><div class="lab">Naive Async (TE)</div><video preload="none" poster="static/videos/posters/catch_async_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/catch_async_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="catch" data-method="rtc"><div class="lab">Train-Time RTC</div><video preload="none" poster="static/videos/posters/catch_rtc_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/catch_rtc_grid.mp4" type="video/mp4"></video></div>
+      </div>
+    </div>
+    <div data-panel="roll" data-key="box" style="display:none">
+      <div class="rollblock">
+        <div class="gv ours" data-task="box" data-method="ours"><div class="lab">πR² (ours)</div><video preload="none" poster="static/videos/posters/box_ours_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/box_ours_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="box" data-method="sync"><div class="lab">Flow, Synchronous</div><video preload="none" poster="static/videos/posters/box_sync_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/box_sync_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="box" data-method="async"><div class="lab">Naive Async (TE)</div><video preload="none" poster="static/videos/posters/box_async_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/box_async_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="box" data-method="rtc"><div class="lab">Train-Time RTC</div><video preload="none" poster="static/videos/posters/box_rtc_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/box_rtc_grid.mp4" type="video/mp4"></video></div>
+      </div>
+    </div>
+    <div data-panel="roll" data-key="book" style="display:none">
+      <div class="rollblock">
+        <div class="gv ours" data-task="book" data-method="ours"><div class="lab">πR² (ours)</div><video preload="none" poster="static/videos/posters/book_ours_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/book_ours_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="book" data-method="sync"><div class="lab">Flow, Synchronous</div><video preload="none" poster="static/videos/posters/book_sync_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/book_sync_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="book" data-method="async"><div class="lab">Naive Async (TE)</div><video preload="none" poster="static/videos/posters/book_async_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/book_async_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="book" data-method="rtc"><div class="lab">Train-Time RTC</div><video preload="none" poster="static/videos/posters/book_rtc_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/book_rtc_grid.mp4" type="video/mp4"></video></div>
+      </div>
+    </div>
+    <div data-panel="roll" data-key="spill" style="display:none">
+      <div class="rollblock">
+        <div class="gv ours" data-task="spill" data-method="ours"><div class="lab">πR² (ours)</div><video preload="none" poster="static/videos/posters/spill_ours_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/spill_ours_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="spill" data-method="sync"><div class="lab">Flow, Synchronous</div><video preload="none" poster="static/videos/posters/spill_sync_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/spill_sync_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="spill" data-method="async"><div class="lab">Naive Async (TE)</div><video preload="none" poster="static/videos/posters/spill_async_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/spill_async_grid.mp4" type="video/mp4"></video></div>
+        <div class="gv" data-task="spill" data-method="rtc"><div class="lab">Train-Time RTC</div><video preload="none" poster="static/videos/posters/spill_rtc_grid.jpg" controls muted loop playsinline><source src="static/videos/grid/spill_rtc_grid.mp4" type="video/mp4"></video></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap"><a href="index.html">&larr; Back to home</a></div></footer>
+<script src="static/js/success.js"></script>
+<script src="static/js/main.js"></script>
+</body>
+</html>

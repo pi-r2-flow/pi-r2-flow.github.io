@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>πR²: Reactive Real-time Flow Policies</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="static/favicon_hand.svg?v=3" type="image/svg+xml">
+<link rel="stylesheet" href="static/css/site.css">
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav"><div class="wrap">
+  <a class="brand" href="#top">&pi;<b>R²</b></a>
+  <span class="links">
+    <a href="#method">Method</a>
+    <a href="#tasks">Real World</a>
+    <a href="#delay">Simulation</a>
+    <a href="rollouts.html">Gallery</a>
+  </span>
+  <span class="nav-actions"></span>
+</div></nav>
+
+<!-- HERO -->
+<header class="hero" id="top"><div class="wrap">
+  <div class="brandrow">
+    <canvas class="hero-wave" aria-hidden="true"></canvas>
+    <h1 class="title"><span class="pi">π</span><b>R²</b></h1>
+    <canvas class="hero-wave" aria-hidden="true"></canvas>
+  </div>
+  <p class="subtitle">Reactive Real-time Flow Policies</p>
+  <p class="authors"><a href="https://rureadyo.github.io/" target="_blank" rel="noopener">Sungjae Park</a>, <a href="https://shubhtuls.github.io/" target="_blank" rel="noopener">Shubham Tulsiani</a></p>
+  <p class="affil">Carnegie Mellon University</p>
+  <div class="cta">
+    <a class="btn primary" href="static/pir2.pdf" id="paper-link">Paper (PDF)</a>
+    <a class="btn" href="https://arxiv.org/abs/2607.26055" target="_blank" rel="noopener" id="arxiv-link">arXiv</a>
+    <a class="btn" href="https://github.com/pi-r2-flow/pi-r2-flow" id="code-link">Code</a>
+  </div>
+</div></header>
+
+<!-- TEASER -->
+<section id="teaser"><div class="wrap">
+  <div class="vidwrap" style="max-width:960px;margin:0 auto;aspect-ratio:16/9">
+    <video id="teaser-reel" muted playsinline autoplay loop preload="auto" poster="static/videos/posters/teaser_init.jpg"><source src="static/videos/teaser_init.mp4" type="video/mp4"></video>
+  </div>
+  <p class="lead" style="margin:20px 0 0">πR² makes large-scale, action-chunking flow policies (e.g., VLAs) <b style="color:var(--text)">reactive</b> and <b style="color:var(--text)">real-time</b> with <a href="#mod1" class="jump" style="color:var(--fast)">a fast proprioception channel</a>, <a href="#mod1" class="jump" style="color:var(--slow)">asynchronous vision and language</a>, and <a href="#mod2" class="jump" style="color:var(--accent-d)">a latency-adaptive flow schedule</a>.</p>
+  <div class="stats">
+    <div class="stat"><div class="n">~4×</div><div class="l">faster than the base policy</div></div>
+    <div class="stat"><div class="n">plug &amp; play</div><div class="l">fine-tune any flow policy</div></div>
+    <div class="stat"><div class="n">up to +30%</div><div class="l">higher success in the real world</div></div>
+  </div>
+</div></section>
+
+<!-- PROBLEM -->
+<section id="problem"><div class="wrap">
+  <p class="eyebrow">The problem</p>
+  <h2>Large-scale flow policies are slow, lacking reactivity</h2>
+  <p class="lead">A modern large-scale flow policy (e.g., VLAs) rests on three ingredients: (1) it predicts actions in <b style="color:var(--text)">chunks</b>, (2) generates each chunk by <b style="color:var(--text)">iterative denoising</b>, and (3) leverages a <b style="color:var(--text)">large backbone</b> (e.g., VLM). These make replanning at every step too expensive, so the policy commits to a chunk and runs it open-loop, blind to the sensory input arriving mid-chunk. Two coupled limitations follow: <b style="color:var(--text)">reduced reactivity</b>, because a chunk plays open-loop while the next is computed, and <b style="color:var(--text)">increased latency</b>, because every action is based on stale observations.</p>
+  <p class="lead" style="margin-top:14px">Toggle the demo below to compare one inference loop across Synchronous Inference, Train-Time RTC, and πR². The two modifications behind πR² are detailed in the <a href="#method" class="jump" style="color:var(--accent)">Method</a>.</p>
+  <div class="panel" style="margin-top:16px">
+    <div class="seg" id="flow-seg" style="margin-bottom:14px;justify-content:center;flex-wrap:wrap;width:100%;background:none;border:none;padding:0">
+      <button class="segbtn active" data-m="0">Synchronous Inference</button>
+      <button class="segbtn" data-m="3" style="color:#e0568f">Train-Time RTC</button>
+      <button class="segbtn" data-m="4" style="margin-left:12px;color:var(--accent-d);font-weight:700">πR² (ours)</button>
+    </div>
+    <div class="hscroll"><canvas id="vla-canvas"></canvas></div>
+    <p class="note" style="margin:8px 0 0;color:var(--dim);text-align:center;font-size:15px"><span class="mono">d</span> = latency of one denoising step &middot; <span class="mono">d_vlm</span> = latency of the VLM forward (both in control steps)</p>
+  </div>
+  <p class="note" id="flow-caption" style="max-width:880px;margin:12px 0 0;color:var(--dim);min-height:40px;font-size:16.5px"></p>
+</div></section>
+
+<!-- METHOD -->
+<section id="method"><div class="wrap">
+  <p class="eyebrow">Method</p>
+  <h2>π<span style="color:var(--accent)">R²</span>: two changes to existing flow policies</h2>
+  <p class="lead">πR² makes two changes to a large-scale flow policy: <a href="#mod1" class="jump" style="color:var(--fast)">proprioception-reactive diffusion forcing</a> for <b style="color:var(--text)">reactivity</b>, and a <a href="#mod2" class="jump" style="color:var(--accent-d)">latency-adaptive flow schedule</a> for <b style="color:var(--text)">real-time</b> control. Both leave the backbone untouched, so πR² drops into existing flow policies (e.g., GR00T-N1.7) by fine-tuning, without training from scratch.</p>
+
+  <p id="mod1" class="eyebrow" style="margin-top:48px;color:var(--fast);scroll-margin-top:70px">Modification 1 · proprioception-reactive diffusion forcing</p>
+  <h3 style="font-size:23px;letter-spacing:-.02em;margin:0 0 6px">React to proprioception, let vision and language lag</h3>
+  <p class="lead" style="margin-top:0">Standard diffusion denoises the whole chunk at one noise level, tying every action to one stale observation. Diffusion forcing instead gives each position its own noise level, so each denoising step reads a fresher observation. πR² splits this conditioning into two channels:</p>
+  <div class="cards" style="margin-top:18px">
+    <div class="card fast">
+      <div class="tag">Fast channel</div>
+      <h3>Proprioception, fresh every tick</h3>
+      <p>Fresh proprioception (joint state, torque, fingertip force) at <b style="color:var(--text)">every denoising step</b>.</p>
+    </div>
+    <div class="card slow">
+      <div class="tag">Slow channel</div>
+      <h3>Vision &amp; language, asynchronously stale</h3>
+      <p>A slower background loop; a learned delay embedding lets the policy tolerate the lag.</p>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:18px">
+    <div class="tag mono" style="color:var(--fast);font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Proprioception-reactive diffusion forcing</div>
+    <p class="note" style="margin:8px 0 12px;color:var(--dim);font-size:16.5px;font-family:var(--sans)">Fresh <b style="color:var(--fast)">proprioception</b> conditions every denoising step, while the <b style="color:var(--slow)">vision-language</b> feature updates asynchronously and the buffer streams out one action at a time.</p>
+    <div class="hscroll"><canvas id="m1-canvas"></canvas></div>
+  </div>
+  <p id="mod2" class="eyebrow" style="margin-top:56px;color:var(--accent);scroll-margin-top:70px">Modification 2 · latency-adaptive schedule</p>
+  <h3 style="font-size:23px;letter-spacing:-.02em;margin:0 0 6px">The staircase: one model, any latency</h3>
+  <p class="lead" style="margin-top:0">Proprioception-reactive diffusion forcing itself is not enough: it assumes the denoising step is instant (delay <span class="mono">d = 0</span>), re-planning every control step. Real inference takes <span class="mono">d &gt; 0</span> steps, and <span class="mono">d</span> varies with model, GPU, and network, so applying it naively would stall the robot at every step while it waits for the forward pass. πR²'s latency-adaptive schedule absorbs that delay as a staircase with three regions:</p>
+  <div class="cards" style="margin-top:18px;grid-template-columns:repeat(auto-fit,minmax(190px,1fr))">
+    <div class="card"><div class="tag" style="color:var(--accent-d)">Clean front &middot; <span style="text-transform:none">d</span></div><h3>In-flight actions</h3><p>The <span class="mono">d</span> actions already executing, clamped clean as inpaint conditioning.</p></div>
+    <div class="card"><div class="tag" style="color:var(--accent-d)">Ramp</div><h3>Clean to noise</h3><p>The interior ramps clean-to-noise, so one step emits <span class="mono">d</span> finished actions.</p></div>
+    <div class="card"><div class="tag" style="color:var(--accent-d)">Noise tail &middot; <span style="text-transform:none">d</span></div><h3>Fresh slots</h3><p><span class="mono">d</span> fresh-noise slots appended at the back as the buffer slides.</p></div>
+  </div>
+  <div class="panel" style="margin-top:18px">
+    <div class="tag mono" style="color:var(--accent-d);font-size:13px;letter-spacing:.1em;text-transform:uppercase;font-weight:600">Latency-adaptive noise schedule</div>
+    <p class="note" style="margin:8px 0 14px;color:var(--dim);font-size:16.5px;font-family:var(--sans)"><b style="color:var(--ink)">Drag the slider</b> to set the measured delay <span class="mono">d</span>. The schedule reshapes so that a single denoising step always emits <span class="mono">d</span> clean actions, keeping control real-time at any latency.</p>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px">
+      <span class="mono" style="font-size:13px;color:var(--accent-d);white-space:nowrap">delay d = <b id="m2-dval">2</b></span>
+      <input type="range" id="m2-d" min="0" max="5" value="2" step="1" style="flex:1;accent-color:var(--accent)">
+    </div>
+    <div class="hscroll"><canvas id="m2-canvas"></canvas></div>
+  </div>
+  <p class="note" style="max-width:780px;margin:16px 0 0;color:var(--dim);font-size:16.5px;font-family:var(--sans)">This is a diffusion-forcing generalization of <b style="color:#e0568f">Train-Time RTC</b>: both clamp the same clean front of <span class="mono">d</span> in-flight actions, but RTC applies a single shared noise level to the rest, while the staircase's ramp and tail let one denoising step emit <span class="mono">d</span> clean actions.</p>
+
+</div></section>
+
+<!-- REAL-WORLD TASKS -->
+<section id="tasks" class="alt"><div class="wrap">
+  <p class="eyebrow">Real world · xArm6 + XHand ·  GR00T-N1.7</p>
+  <h2>Real World Results</h2>
+  <p class="lead">πR² tracks smoothly through contact, replanning closed-loop every 1-2 control ticks instead of committing to a long open-loop chunk. All methods fine-tune GR00T-N1.7 (xArm6 + XHand, 25&nbsp;Hz).</p>
+
+  <div class="tabs" style="margin-top:18px">
+    <button class="tab active" data-tab="task" data-key="catch">Catch Book</button>
+    <button class="tab" data-tab="task" data-key="box">Insert Box</button>
+    <button class="tab" data-tab="task" data-key="book">Tidy Up Book</button>
+    <button class="tab" data-tab="task" data-key="spill">Don't Spill</button>
+    <span class="rtbadge" style="margin-left:auto;align-self:center">1× real-time</span>
+    <button class="btn-sm playall" data-group="task" style="margin-left:12px">▶ Play all</button>
+</div>
+
+  <div data-tabgroup="task">
+    <div data-panel="task" data-key="catch">
+      <div class="taskgrid">
+        <div class="vcell ours" data-task="catch" data-method="ours"><video preload="metadata" controls muted loop playsinline><source src="static/videos/catch_ours.mp4" type="video/mp4"></video><div class="lab">πR² (ours)</div></div>
+        <div class="vcell" data-task="catch" data-method="sync"><video preload="metadata" controls muted loop playsinline><source src="static/videos/catch_sync.mp4" type="video/mp4"></video><div class="lab">Flow, Synchronous</div></div>
+        <div class="vcell" data-task="catch" data-method="async"><video preload="metadata" controls muted loop playsinline><source src="static/videos/catch_async.mp4" type="video/mp4"></video><div class="lab">Naive Async (TE)</div></div>
+        <div class="vcell" data-task="catch" data-method="rtc"><video preload="metadata" controls muted loop playsinline><source src="static/videos/catch_rtc.mp4" type="video/mp4"></video><div class="lab">Train-Time RTC</div></div>
+      </div>
+    </div>
+    <div data-panel="task" data-key="box" style="display:none">
+      <div class="taskgrid">
+        <div class="vcell ours" data-task="box" data-method="ours"><video preload="metadata" controls muted loop playsinline><source src="static/videos/box_ours.mp4" type="video/mp4"></video><div class="lab">πR² (ours)</div></div>
+        <div class="vcell" data-task="box" data-method="sync"><video preload="metadata" controls muted loop playsinline><source src="static/videos/box_sync.mp4" type="video/mp4"></video><div class="lab">Flow, Synchronous</div></div>
+        <div class="vcell" data-task="box" data-method="async"><video preload="metadata" controls muted loop playsinline><source src="static/videos/box_async.mp4" type="video/mp4"></video><div class="lab">Naive Async (TE)</div></div>
+        <div class="vcell" data-task="box" data-method="rtc"><video preload="metadata" controls muted loop playsinline><source src="static/videos/box_rtc.mp4" type="video/mp4"></video><div class="lab">Train-Time RTC</div></div>
+      </div>
+    </div>
+    <div data-panel="task" data-key="book" style="display:none">
+      <div class="taskgrid">
+        <div class="vcell ours" data-task="book" data-method="ours"><video preload="metadata" controls muted loop playsinline><source src="static/videos/book_ours.mp4" type="video/mp4"></video><div class="lab">πR² (ours)</div></div>
+        <div class="vcell" data-task="book" data-method="sync"><video preload="metadata" controls muted loop playsinline><source src="static/videos/book_sync.mp4" type="video/mp4"></video><div class="lab">Flow, Synchronous</div></div>
+        <div class="vcell" data-task="book" data-method="async"><video preload="metadata" controls muted loop playsinline><source src="static/videos/book_async.mp4" type="video/mp4"></video><div class="lab">Naive Async (TE)</div></div>
+        <div class="vcell" data-task="book" data-method="rtc"><video preload="metadata" controls muted loop playsinline><source src="static/videos/book_rtc.mp4" type="video/mp4"></video><div class="lab">Train-Time RTC</div></div>
+      </div>
+    </div>
+    <div data-panel="task" data-key="spill" style="display:none">
+      <div class="taskgrid">
+        <div class="vcell ours" data-task="spill" data-method="ours"><video preload="metadata" controls muted loop playsinline><source src="static/videos/spill_ours.mp4" type="video/mp4"></video><div class="lab">πR² (ours)</div></div>
+        <div class="vcell" data-task="spill" data-method="sync"><video preload="metadata" controls muted loop playsinline><source src="static/videos/spill_sync.mp4" type="video/mp4"></video><div class="lab">Flow, Synchronous</div></div>
+        <div class="vcell" data-task="spill" data-method="async"><video preload="metadata" controls muted loop playsinline><source src="static/videos/spill_async.mp4" type="video/mp4"></video><div class="lab">Naive Async (TE)</div></div>
+        <div class="vcell" data-task="spill" data-method="rtc"><video preload="metadata" controls muted loop playsinline><source src="static/videos/spill_rtc.mp4" type="video/mp4"></video><div class="lab">Train-Time RTC</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:44px">
+    <h3 style="font-size:20px;letter-spacing:-.02em;margin:0 0 12px">πR² reacts to proprioception instantly, while baselines run a stale plan.</h3>
+    <div class="tabs" style="margin-bottom:14px">
+      <button class="tab active" data-tab="fast" data-key="catch">Catch Book</button>
+      <button class="tab" data-tab="fast" data-key="box">Insert Box</button>
+      <button class="tab" data-tab="fast" data-key="book">Tidy Up Book</button>
+      <button class="tab" data-tab="fast" data-key="spill">Don't Spill</button>
+      <span class="rtbadge" style="margin-left:auto;align-self:center">1× real-time</span>
+    </div>
+    <div class="cmpwide">
+      <div data-tabgroup="fast">
+        <div data-panel="fast" data-key="catch">
+          <p class="cmpdesc">πR² closes on the force spike as the book lands; RTC reacts too late and it slips.</p>
+          <div class="cmplegend"><span class="sw" style="border-top:3px solid #0e9e8f"></span>index fingertip force (N)<span class="sw" style="border-top:3px dashed #7c5cff"></span>thumb-bend action (rad)</div>
+          <div class="cmpgrid">
+            <div class="cell ours"><div class="lab">πR² (ours)</div><video class="scrub" muted loop playsinline autoplay preload="metadata"><source src="static/videos/cmp/catch_ours_cmp.mp4" type="video/mp4"></video></div>
+            <div class="cell"><div class="lab">Train-Time RTC</div><video class="scrub" muted loop playsinline autoplay preload="metadata"><source src="static/videos/cmp/catch_rtc_cmp.mp4" type="video/mp4"></video></div>
+          </div>
+        </div>
+        <div data-panel="fast" data-key="box" style="display:none">
+          <p class="cmpdesc">RTC reacts late to the force feedback and its index force overshoots out-of-distribution; πR² stays controlled.</p>
+          <div class="cmplegend"><span class="sw" style="border-top:3px solid #0e9e8f"></span>index fingertip force (N)<span class="sw" style="border-top:3px dashed #7c5cff"></span>index_j1 action (rad)</div>
+          <div class="cmpgrid">
+            <div class="cell ours"><div class="lab">πR² (ours)</div><video class="scrub" muted loop playsinline autoplay preload="metadata"><source src="static/videos/cmp/box_ours_cmp.mp4" type="video/mp4"></video></div>
+            <div class="cell"><div class="lab">Train-Time RTC</div><video class="scrub" muted loop playsinline autoplay preload="metadata"><source src="static/videos/cmp/box_rtc_cmp.mp4" type="video/mp4"></video></div>
+          </div>
+        </div>
+        <div data-panel="fast" data-key="book" style="display:none">
+          <p class="cmpdesc">RTC squeezes too hard, its middle-finger force spikes, and the book drops; πR² grips just enough to lift it.</p>
+          <div class="cmplegend"><span class="sw" style="border-top:3px solid #0e9e8f"></span>middle fingertip force (N)<span class="sw" style="border-top:3px dashed #7c5cff"></span>index_j1 action (rad)</div>
+          <div class="cmpgrid">
+            <div class="cell ours"><div class="lab">πR² (ours)</div><video class="scrub" muted loop playsinline autoplay preload="metadata"><source src="static/videos/cmp/book_ours_cmp.mp4" type="video/mp4"></video></div>
+            <div class="cell"><div class="lab">Train-Time RTC</div><video class="scrub" muted loop playsinline autoplay preload="metadata"><source src="static/videos/cmp/book_rtc_cmp.mp4" type="video/mp4"></video></div>
+          </div>
+        </div>
+        <div data-panel="fast" data-key="spill" style="display:none">
+          <p class="cmpdesc">RTC's thumb never contacts the ball (thumb force ~0) but keeps going; πR² grasps it with both fingers.</p>
+          <div class="cmplegend"><span class="sw" style="border-top:3px solid #0e9e8f"></span>index force (N)<span class="sw" style="border-top:3px solid #1f7a8c"></span>thumb force (N)<span class="sw" style="border-top:3px dashed #7c5cff"></span>index_j1 action (rad)<span class="sw" style="border-top:3px dashed #c057d6"></span>thumb_bend action (rad)</div>
+          <div class="cmpgrid">
+            <div class="cell ours"><div class="lab">πR² (ours)</div><video class="scrub" muted loop playsinline autoplay preload="metadata"><source src="static/videos/cmp/spill_ours_cmp.mp4" type="video/mp4"></video></div>
+            <div class="cell"><div class="lab">Train-Time RTC</div><video class="scrub" muted loop playsinline autoplay preload="metadata"><source src="static/videos/cmp/spill_rtc_cmp.mp4" type="video/mp4"></video></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:44px">
+    <h3 style="font-size:20px;letter-spacing:-.02em;margin:0 0 4px">Quantitative results</h3>
+    <p class="lead" style="margin:6px 0 14px">πR² leads on every task, in both success rate and progress.</p>
+    <div class="panel">
+      <div class="seg" id="results-metric" style="margin-bottom:14px">
+        <button class="segbtn active" data-m="sr">Success rate</button>
+        <button class="segbtn" data-m="prog">Progress (subgoals)</button>
+      </div>
+      <div class="hscroll"><canvas id="results-canvas"></canvas></div>
+      <div class="legend" style="margin-top:6px">
+        <span class="k"><span class="dot" style="background:#b8c0cc"></span> Flow, Synchronous</span>
+        <span class="k"><span class="dot" style="background:#7f8b9c"></span> Naive Async (TE)</span>
+        <span class="k"><span class="dot" style="background:#e0568f"></span> Train-Time RTC</span>
+        <span class="k"><span class="dot" style="background:#0e9e8f"></span> πR² (ours)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="center" style="margin-top:36px">
+    <a class="btn" href="rollouts.html">View all 20 rollouts per method →</a>
+  </div>
+
+  <div style="margin-top:52px;padding-top:44px;border-top:1px solid var(--line)">
+    <h3 style="font-size:20px;letter-spacing:-.02em;margin:0 0 4px">πR² matches the demonstration's smoothness and speed.</h3>
+    <p class="lead" style="margin-bottom:6px">Next to the human teleoperator who collected the demos, πR² runs continuously and keeps pace, without the chunk-boundary stalls of open-loop baselines.</p>
+    <div class="tabs" style="margin-top:16px">
+    <button class="tab active" data-tab="tele" data-key="catch">Catch Book</button>
+    <button class="tab" data-tab="tele" data-key="box">Insert Box</button>
+    <button class="tab" data-tab="tele" data-key="book">Tidy Up Book</button>
+    <button class="tab" data-tab="tele" data-key="spill">Don't Spill</button>
+    <span class="rtbadge" style="margin-left:auto;align-self:center">1× real-time</span>
+    <button class="btn-sm playall" data-group="tele" style="margin-left:12px">▶ Play all</button>
+</div>
+    <div data-tabgroup="tele">
+      <div data-panel="tele" data-key="catch">
+        <div class="taskgrid uniform">
+          <div class="vcell"><video preload="none" poster="static/videos/posters/teleop_catch.jpg" controls muted loop playsinline><source src="static/videos/teleop_catch.mp4" type="video/mp4"></video><div class="lab">Human teleoperation</div></div>
+          <div class="vcell ours" data-task="catch" data-method="ours"><video preload="metadata" controls muted loop playsinline><source src="static/videos/catch_ours_tele.mp4" type="video/mp4"></video><div class="lab">πR² (ours)</div></div>
+        </div>
+      </div>
+      <div data-panel="tele" data-key="box" style="display:none">
+        <div class="taskgrid uniform">
+          <div class="vcell"><video preload="none" poster="static/videos/posters/teleop_box.jpg" controls muted loop playsinline><source src="static/videos/teleop_box.mp4" type="video/mp4"></video><div class="lab">Human teleoperation</div></div>
+          <div class="vcell ours" data-task="box" data-method="ours"><video preload="metadata" controls muted loop playsinline><source src="static/videos/box_ours.mp4" type="video/mp4"></video><div class="lab">πR² (ours)</div></div>
+        </div>
+      </div>
+      <div data-panel="tele" data-key="book" style="display:none">
+        <div class="taskgrid uniform">
+          <div class="vcell"><video preload="none" poster="static/videos/posters/teleop_book.jpg" controls muted loop playsinline><source src="static/videos/teleop_book.mp4" type="video/mp4"></video><div class="lab">Human teleoperation</div></div>
+          <div class="vcell ours" data-task="book" data-method="ours"><video preload="metadata" controls muted loop playsinline><source src="static/videos/book_ours.mp4" type="video/mp4"></video><div class="lab">πR² (ours)</div></div>
+        </div>
+      </div>
+      <div data-panel="tele" data-key="spill" style="display:none">
+        <div class="taskgrid uniform">
+          <div class="vcell"><video preload="none" poster="static/videos/posters/teleop_spill.jpg" controls muted loop playsinline><source src="static/videos/teleop_spill.mp4" type="video/mp4"></video><div class="lab">Human teleoperation</div></div>
+          <div class="vcell ours" data-task="spill" data-method="ours"><video preload="metadata" controls muted loop playsinline><source src="static/videos/spill_ours.mp4" type="video/mp4"></video><div class="lab">πR² (ours)</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div></section>
+
+<!-- DELAY EXPLORER -->
+<section id="delay"><div class="wrap">
+  <p class="eyebrow">Simulation</p>
+  <h2>Success rate vs. inference delay</h2>
+  <p class="lead">For a fixed unit-delay budget <span class="mono">d₀</span>, each method incurs a different <em>effective</em> delay, which is why πR² holds up as the budget grows. Drag <span class="mono">d₀</span>.</p>
+  <div class="tabs" id="delay-tabs" style="margin:14px 0 4px"></div>
+  <div class="explorer">
+    <div class="controls" style="justify-content:center">
+      <div class="ctl">unit delay <span class="mono">d₀</span> = <span class="val" id="delay-x-val">2</span>
+        <input type="range" id="delay-x"></div>
+    </div>
+    <div class="explorer-2">
+      <div class="panel">
+        <div id="delay-readout" class="readout"></div>
+        <canvas id="delay-canvas"></canvas>
+      </div>
+      <div>
+        <div class="legend" style="flex-direction:column;gap:12px">
+          <span class="k"><span class="dot" style="background:#7f8b9c"></span> Flow, naive async</span>
+          <span class="k"><span class="dot" style="background:#e0568f"></span> Flow, Train-Time RTC</span>
+          <span class="k"><span class="dot" style="background:#5bb3a6"></span> πR² (w/o async)</span>
+          <span class="k"><span class="dot" style="background:#0e9e8f"></span> πR² (full)</span>
+        </div>
+        <p class="note" id="delay-note"></p>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+
+
+<!-- FAILURES -->
+<section id="failures" class="alt"><div class="wrap">
+  <p class="eyebrow">Limitations</p>
+  <h2>What π<span style="color:var(--accent)">R²</span> does not solve yet</h2>
+  <p class="lead">πR² is a first step toward reactive, real-time flow policies, and a few limitations stand out.</p>
+  <div class="cards three" style="margin-top:22px">
+    <div class="card"><div class="tag">Limitation 1</div><h3>Reactive data is hard to collect</h3><p>Teleoperated demonstrations that are themselves highly reactive are hard to collect, so the data tends to hold only limited reactive recovery behavior.</p></div>
+    <div class="card"><div class="tag">Limitation 2</div><h3>Proprioception conditioning</h3><p>We condition on proprioception more often than on vision and language. Better conditioning, and richer tactile signals such as tactile images, remain open.</p></div>
+    <div class="card"><div class="tag">Limitation 3</div><h3>Only local replanning</h3><p>If the early denoising steps plan toward the next subtask, the last denoising step with fresh proprioception may not be able to revert it, so the robot might recover late (see clip).</p></div>
+  </div>
+  <div class="failgrid" style="grid-template-columns:1fr;max-width:520px;margin-top:22px">
+    <div class="vcell"><div class="vidwrap" style="aspect-ratio:1536/1080"><video preload="metadata" controls muted loop playsinline><source src="static/videos/box_fail.mp4" type="video/mp4"></video></div><div class="lab">Insert Box: the box is left misplaced, and πR² corrects only late.</div></div>
+  </div>
+</div></section>
+
+<!-- CITE -->
+<section id="cite"><div class="wrap">
+  <p class="eyebrow">BibTeX</p>
+  <div class="cite">@misc{park2026pir2,
+  title  = {{\pi}R^2: Reactive Real-time Flow Policies},
+  author = {Park, Sungjae and Tulsiani, Shubham},
+  year   = {2026}
+}</div>
+</div></section>
+
+<!-- ACKNOWLEDGEMENTS -->
+<section id="ack"><div class="wrap">
+  <h2>Acknowledgements</h2>
+  <p class="lead">We appreciate the helpful discussions with Gaowen Liu and Jayanth Srinivasa from CISCO, Tony Tao, Andrew Wang, Jason Liu, and Yuxuan Kuang. We also thank Yishu Li, Kallol Saha, and Soumojit Bhattacharya for helping real-world experiments. Lastly, we thank Hyeonwoo Kim for the feedback on website design. This work was supported by gift awards from CISCO, Google, and NSF Award IIS-2442282.</p>
+</div></section>
+
+<footer><div class="wrap">π<b>R²</b> · &copy; 2026 Sungjae Park</div></footer>
+
+<script src="static/js/hero.js"></script>
+<script src="static/js/vlaflow.js"></script>
+<script src="static/js/proprio_data.js"></script>
+<script src="static/js/cmpscrub.js"></script>
+<script src="static/js/delay.js"></script>
+<script src="static/js/mod2_sched.js"></script>
+<script src="static/js/results.js"></script>
+<script src="static/js/success.js"></script>
+<script src="static/js/main.js"></script>
+</body>
+</html>
