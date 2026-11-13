@@ -263,6 +263,7 @@ footer{padding:48px 0;border-top:1px solid var(--line);color:var(--faint);font-s
 
 /* Award line under the authors (hover the workshop name for details). */
 .venue-line{margin:14px 0 0;color:var(--dim);font-size:16px;font-weight:500;line-height:1.45}
+.venue-line>span{display:block}
 .venue-line strong{color:var(--ink);font-weight:700}
 .venue-detail{position:relative;display:inline-block;color:var(--accent-d);font-weight:600;border-bottom:1px dashed currentColor;outline:none}
 .venue-detail:hover{color:var(--accent)}
