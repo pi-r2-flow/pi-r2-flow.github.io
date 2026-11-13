@@ -277,35 +277,16 @@
 
 </div></section>
 
-<!-- DELAY EXPLORER -->
+<!-- SIMULATION RESULTS -->
 <section id="delay"><div class="wrap">
   <p class="eyebrow">Simulation</p>
   <h2>Success rate vs. inference delay</h2>
-  <p class="lead">For a fixed unit-delay budget <span class="mono">d₀</span>, each method incurs a different <em>effective</em> delay, which is why πR² holds up as the budget grows. Drag <span class="mono">d₀</span>.</p>
+  <p class="lead">Simulation results on Leap Cube Reorientation at 20 Hz. Switch between the baseline comparison and component ablations.</p>
   <div class="tabs" id="delay-tabs" style="margin:14px 0 4px"></div>
   <div class="explorer">
-    <div class="controls" style="justify-content:center">
-      <div class="ctl">unit delay <span class="mono">d₀</span> = <span class="val" id="delay-x-val">2</span>
-        <input type="range" id="delay-x"></div>
-    </div>
-    <div class="explorer-2">
-      <div class="panel">
-        <div id="delay-readout" class="readout"></div>
-        <canvas id="delay-canvas"></canvas>
-      </div>
-      <div>
-        <div class="legend" style="flex-direction:column;gap:12px">
-          <span class="k"><span class="dot" style="background:#7f8b9c"></span> Flow, naive async</span>
-          <span class="k"><span class="dot" style="background:#e0568f"></span> Flow, Train-Time RTC</span>
-          <span class="k"><span class="dot" style="background:#5bb3a6"></span> πR² (w/o async)</span>
-          <span class="k"><span class="dot" style="background:#0e9e8f"></span> πR² (full)</span>
-        </div>
-        <p class="note" id="delay-note"></p>
-      </div>
-    </div>
+    <div class="explorer-2 sim-plot-wrap"><div class="panel"><div class="abc-plot"><img id="delay-plot" src="static/simulation/final-abc.png" alt="Paper-rendered simulation panels (a), (b), and (c)"><div id="abc-highlight" class="abc-highlight panel-b" aria-hidden="true"></div></div><div><p class="note" id="delay-note"></p></div></div>
   </div>
 </div></section>
-
 
 
 <!-- FAILURES -->
